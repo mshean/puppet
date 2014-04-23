@@ -31,15 +31,19 @@ describe Puppet::Util::Diff do
 
     it "should correctly diff files without arguments" do
       Puppet[:diff] = 'diff'
+      Puppet[:diff_args] = ''
       tempfileA = Tempfile.new("puppet-diffingA")
       tempfileB = Tempfile.new("puppet-diffingB")
+      expected = "@@ -1 +1 @@\n-hello\n\+world\n"
+
       tempfileA.open
       tempfileB.open
       tempfileA.print "hello\n"
       tempfileB.print "world\n"
       tempfileA.close
       tempfileB.close
-      subject.diff(tempfileA.path, tempfileB.path).should include("@@ -1 +1 @@\n-hello\n\+world\n")
+      Puppet::Util::Execution.expects(:execute).with(['diff', tempfileA.path, tempfileB.path], {:failonfail => false, :combine => false}).returns(expected)
+      subject.diff(tempfileA.path, tempfileB.path).should == expected
       tempfileA.delete
       tempfileB.delete
     end
@@ -49,13 +53,16 @@ describe Puppet::Util::Diff do
       Puppet[:diff_args] = '-u'
       tempfileA = Tempfile.new("puppet-diffingA")
       tempfileB = Tempfile.new("puppet-diffingB")
+      expected = "@@ -1 +1 @@\n-hello\n\+world\n"
+
       tempfileA.open
       tempfileB.open
       tempfileA.print "hello\n"
       tempfileB.print "world\n"
       tempfileA.close
       tempfileB.close
-      subject.diff(tempfileA.path, tempfileB.path).should include("@@ -1 +1 @@\n-hello\n\+world\n")
+      Puppet::Util::Execution.expects(:execute).with(['diff', '-u', tempfileA.path, tempfileB.path], {:failonfail => false, :combine => false}).returns(expected)
+      subject.diff(tempfileA.path, tempfileB.path).should == expected
       tempfileA.delete
       tempfileB.delete
     end
@@ -65,13 +72,16 @@ describe Puppet::Util::Diff do
       Puppet[:diff_args] = '-u --strip-trailing-cr'
       tempfileA = Tempfile.new("puppet-diffingA")
       tempfileB = Tempfile.new("puppet-diffingB")
+      expected = "@@ -1 +1 @@\n-hello\n\+world\n"
+
       tempfileA.open
       tempfileB.open
       tempfileA.print "hello\n"
       tempfileB.print "world\n"
       tempfileA.close
       tempfileB.close
-      subject.diff(tempfileA.path, tempfileB.path).should include("@@ -1 +1 @@\n-hello\n\+world\n")
+      Puppet::Util::Execution.expects(:execute).with(['diff', '-u', '--strip-trailing-cr', tempfileA.path, tempfileB.path], {:failonfail => false, :combine => false}).returns(expected)
+      subject.diff(tempfileA.path, tempfileB.path).should == expected
       tempfileA.delete
       tempfileB.delete
     end
