@@ -2,7 +2,6 @@
 require 'spec_helper'
 require 'puppet/util/diff'
 require 'puppet/util/execution'
-require 'tempfile'
 
 describe Puppet::Util::Diff do
   describe ".diff" do
@@ -11,6 +10,14 @@ describe Puppet::Util::Diff do
       Puppet[:diff_args] = 'bar'
 
       Puppet::Util::Execution.expects(:execute).with(['foo', 'bar', 'a', 'b'], {:failonfail => false, :combine => false}).returns('baz')
+      subject.diff('a', 'b').should == 'baz'
+    end
+
+    it "should execute the diff command with multiple arguments" do
+      Puppet[:diff] = 'foo'
+      Puppet[:diff_args] = 'bar qux'
+
+      Puppet::Util::Execution.expects(:execute).with(['foo', 'bar', 'qux', 'a', 'b'], anything).returns('baz')
       subject.diff('a', 'b').should == 'baz'
     end
 
@@ -27,63 +34,6 @@ describe Puppet::Util::Diff do
 
       Puppet::Util::Execution.expects(:execute).never
       subject.diff('a', 'b').should == ''
-    end
-
-    it "should correctly diff files without arguments" do
-      Puppet[:diff] = 'diff'
-      Puppet[:diff_args] = ''
-      tempfileA = Tempfile.new("puppet-diffingA")
-      tempfileB = Tempfile.new("puppet-diffingB")
-      expected = "@@ -1 +1 @@\n-hello\n\+world\n"
-
-      tempfileA.open
-      tempfileB.open
-      tempfileA.print "hello\n"
-      tempfileB.print "world\n"
-      tempfileA.close
-      tempfileB.close
-      Puppet::Util::Execution.expects(:execute).with(['diff', tempfileA.path, tempfileB.path], {:failonfail => false, :combine => false}).returns(expected)
-      subject.diff(tempfileA.path, tempfileB.path).should == expected
-      tempfileA.delete
-      tempfileB.delete
-    end
-
-    it "should correctly diff files with an argument" do
-      Puppet[:diff] = 'diff'
-      Puppet[:diff_args] = '-u'
-      tempfileA = Tempfile.new("puppet-diffingA")
-      tempfileB = Tempfile.new("puppet-diffingB")
-      expected = "@@ -1 +1 @@\n-hello\n\+world\n"
-
-      tempfileA.open
-      tempfileB.open
-      tempfileA.print "hello\n"
-      tempfileB.print "world\n"
-      tempfileA.close
-      tempfileB.close
-      Puppet::Util::Execution.expects(:execute).with(['diff', '-u', tempfileA.path, tempfileB.path], {:failonfail => false, :combine => false}).returns(expected)
-      subject.diff(tempfileA.path, tempfileB.path).should == expected
-      tempfileA.delete
-      tempfileB.delete
-    end
-
-    it "should correctly diff files with multiple arguments" do
-      Puppet[:diff] = 'diff'
-      Puppet[:diff_args] = '-u --strip-trailing-cr'
-      tempfileA = Tempfile.new("puppet-diffingA")
-      tempfileB = Tempfile.new("puppet-diffingB")
-      expected = "@@ -1 +1 @@\n-hello\n\+world\n"
-
-      tempfileA.open
-      tempfileB.open
-      tempfileA.print "hello\n"
-      tempfileB.print "world\n"
-      tempfileA.close
-      tempfileB.close
-      Puppet::Util::Execution.expects(:execute).with(['diff', '-u', '--strip-trailing-cr', tempfileA.path, tempfileB.path], {:failonfail => false, :combine => false}).returns(expected)
-      subject.diff(tempfileA.path, tempfileB.path).should == expected
-      tempfileA.delete
-      tempfileB.delete
     end
   end
 end
